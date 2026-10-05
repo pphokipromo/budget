@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finora — Personal Budgeting</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#7b8496;--line:#e8ebf1;
+  --primary:#3b5ccc;--primary2:#6578df;--green:#159570;--red:#dc5a63;--yellow:#c78b22;
+  --shadow:0 10px 30px rgba(30,43,74,.07);--radius:18px;
+}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);background:var(--bg)}
+button,input,select{font:inherit} button{cursor:pointer;border:0}
+.app{display:flex;min-height:100vh}.sidebar{width:245px;background:#fff;border-right:1px solid var(--line);padding:24px 16px;position:fixed;inset:0 auto 0 0;z-index:10}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 10px 30px;font-size:20px;font-weight:800}.brandmark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#8a96ed);color:#fff;display:grid;place-items:center}
+.nav{display:grid;gap:6px}.nav button{background:transparent;color:#687286;text-align:left;padding:12px 13px;border-radius:12px;font-weight:600}.nav button.active,.nav button:hover{background:#eef1ff;color:var(--primary)}
+.main{margin-left:245px;width:calc(100% - 245px);padding:28px 32px 50px}.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.title h1{margin:0;font-size:27px}.title p{margin:6px 0 0;color:var(--muted)}
+.actions{display:flex;gap:10px}.btn{padding:11px 16px;border-radius:12px;font-weight:700;background:#fff;border:1px solid var(--line);color:var(--text)}.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}.metric .label{color:var(--muted);font-size:13px;font-weight:600}.metric .value{font-size:25px;font-weight:800;margin:9px 0 5px}.positive{color:var(--green)}.negative{color:var(--red)}.sub{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:1.4fr .9fr;gap:18px;margin-top:18px}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.section-title h2{font-size:16px;margin:0}.muted{color:var(--muted)}
+.progress{height:9px;background:#edf0f5;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:var(--primary);border-radius:99px}
+.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}.table th{color:var(--muted);font-weight:600}.amount{text-align:right!important;font-weight:750}.tag{display:inline-flex;padding:5px 9px;border-radius:8px;background:#f1f3f8;color:#596377;font-size:11px;font-weight:700}
+.row-actions button{background:transparent;color:var(--muted);padding:5px}.empty{text-align:center;padding:35px;color:var(--muted)}
+.page{display:none}.page.active{display:block}.filters{display:flex;gap:10px;margin-bottom:15px}.input,.select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;outline:none}.filters .input{max-width:220px}
+.chart{height:240px;display:flex;align-items:end;gap:10px;padding:10px 5px 5px}.barwrap{flex:1;height:100%;display:flex;align-items:end;justify-content:center;gap:4px}.bar{width:45%;border-radius:6px 6px 2px 2px;min-height:3px}.inc{background:#78bfa8}.out{background:#e58a90}.month-label{font-size:10px;color:var(--muted);text-align:center;margin-top:7px}
+.modal{position:fixed;inset:0;background:rgba(17,25,39,.4);display:none;place-items:center;z-index:30;padding:20px}.modal.show{display:grid}.modalbox{background:#fff;width:min(520px,100%);border-radius:20px;padding:23px;box-shadow:0 25px 70px rgba(0,0,0,.18)}.modalhead{display:flex;justify-content:space-between;align-items:center}.modalhead h3{margin:0}.x{background:#f2f4f7;border-radius:9px;width:34px;height:34px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:18px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;color:var(--muted);font-weight:700}.modalfoot{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+.notice{background:#f0f3ff;border:1px solid #dce2ff;padding:14px 16px;border-radius:13px;color:#4051a5;font-size:13px;line-height:1.5;margin-bottom:18px}
+@media(max-width:900px){.sidebar{width:74px;padding:18px 9px}.brand span,.nav button span{display:none}.brand{justify-content:center;padding-bottom:20px}.nav button{text-align:center}.main{margin-left:74px;width:calc(100% - 74px);padding:20px}.cards{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
+@media(max-width:600px){.cards{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:10px}.actions .btn:first-child{display:none}.filters{flex-wrap:wrap}.filters>*{max-width:none!important}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.table{min-width:650px}.card.scroll{overflow:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brandmark">F</div><span>Finora</span></div>
+  <nav class="nav">
+    <button class="active" data-page="dashboard">◈ <span>Dashboard</span></button>
+    <button data-page="transactions">↕ <span>Transaksi</span></button>
+    <button data-page="budget">▤ <span>Budget</span></button>
+    <button data-page="goals">◎ <span>Target</span></button>
+    <button data-page="reports">◒ <span>Laporan</span></button>
+    <button data-page="settings">⚙ <span>Pengaturan</span></button>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="title"><h1 id="pageTitle">Dashboard</h1><p id="monthText"></p></div>
+    <div class="actions"><button class="btn" onclick="exportData()">Export</button><button class="btn primary" onclick="openModal()">+ Transaksi</button></div>
+  </div>
+
+  <section class="page active" id="dashboard">
+    <div class="cards">
+      <div class="card metric"><div class="label">Saldo</div><div class="value" id="mBalance">Rp0</div><div class="sub">Pemasukan - pengeluaran</div></div>
+      <div class="card metric"><div class="label">Pemasukan bulan ini</div><div class="value positive" id="mIncome">Rp0</div><div class="sub">Total uang masuk</div></div>
+      <div class="card metric"><div class="label">Pengeluaran bulan ini</div><div class="value negative" id="mExpense">Rp0</div><div class="sub">Total uang keluar</div></div>
+      <div class="card metric"><div class="label">Savings rate</div><div class="value" id="mRate">0%</div><div class="sub">Persentase tersisa</div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="section-title"><h2>Arus kas</h2><span class="muted">6 bulan</span></div><div class="chart" id="chart"></div></div>
+      <div class="card"><div class="section-title"><h2>Budget kategori</h2><span class="muted" id="budgetSummary"></span></div><div id="budgetMini"></div></div>
+    </div>
+    <div class="card" style="margin-top:18px"><div class="section-title"><h2>Transaksi terbaru</h2><button class="btn" onclick="showPage('transactions')">Lihat semua</button></div><div id="recent"></div></div>
+  </section>
+
+  <section class="page" id="transactions">
+    <div class="card">
+      <div class="filters"><input class="input" id="search" placeholder="Cari transaksi..." oninput="renderTransactions()"><select class="select" id="filterType" onchange="renderTransactions()"><option value="">Semua tipe</option><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select><select class="select" id="filterCat" onchange="renderTransactions()"><option value="">Semua kategori</option></select></div>
+      <div class="card scroll" style="padding:0;border:0;box-shadow:none"><div id="transactionsTable"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="budget">
+    <div class="card"><div class="section-title"><h2>Budget bulanan</h2><button class="btn primary" onclick="addBudget()">+ Kategori</button></div><div id="budgetList"></div></div>
+  </section>
+
+  <section class="page" id="goals">
+    <div class="card"><div class="section-title"><h2>Target keuangan</h2><button class="btn primary" onclick="addGoal()">+ Target</button></div><div id="goalsList"></div></div>
+  </section>
+
+  <section class="page" id="reports">
+    <div class="cards"><div class="card metric"><div class="label">Rata-rata pemasukan</div><div class="value positive" id="avgIncome">Rp0</div></div><div class="card metric"><div class="label">Rata-rata pengeluaran</div><div class="value negative" id="avgExpense">Rp0</div></div><div class="card metric"><div class="label">Kategori terbesar</div><div class="value" style="font-size:19px" id="topCategory">-</div></div><div class="card metric"><div class="label">Total transaksi</div><div class="value" id="countTx">0</div></div></div>
+    <div class="grid"><div class="card"><div class="section-title"><h2>Pengeluaran per kategori</h2></div><div id="categoryReport"></div></div><div class="card"><div class="section-title"><h2>Insight</h2></div><div id="insights" class="muted" style="line-height:1.8"></div></div></div>
+  </section>
+
+  <section class="page" id="settings">
+    <div class="card">
+      <div class="section-title"><h2>Pengaturan</h2></div>
+      <div class="notice"><b>Mode lokal aktif.</b> Data pada versi template ini tersimpan di browser perangkat ini. Untuk login email dan sinkronisasi antar-device, hubungkan aplikasi ke Supabase/Firebase pada bagian backend.</div>
+      <div class="field" style="max-width:450px"><label>NAMA PROFIL</label><input class="input" id="profileName" placeholder="Nama kamu"></div>
+      <button class="btn primary" style="margin-top:15px" onclick="saveProfile()">Simpan profil</button>
+      <hr style="border:0;border-top:1px solid var(--line);margin:25px 0">
+      <button class="btn" onclick="resetData()">Reset semua data demo</button>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="modal" id="modal"><div class="modalbox">
+  <div class="modalhead"><h3>Tambah transaksi</h3><button class="x" onclick="closeModal()">×</button></div>
+  <form id="txForm" onsubmit="saveTx(event)">
+    <div class="formgrid">
+      <div class="field"><label>TIPE</label><select class="select" id="txType"><option value="expense">Pengeluaran</option><option value="income">Pemasukan</option></select></div>
+      <div class="field"><label>TANGGAL</label><input class="input" type="date" id="txDate" required></div>
+      <div class="field full"><label>KETERANGAN</label><input class="input" id="txDesc" placeholder="Contoh: Gaji, makan siang..." required></div>
+      <div class="field"><label>KATEGORI</label><select class="select" id="txCat"></select></div>
+      <div class="field"><label>NOMINAL</label><input class="input" type="number" id="txAmount" min="0" required></div>
+    </div>
+    <div class="modalfoot"><button type="button" class="btn" onclick="closeModal()">Batal</button><button class="btn primary">Simpan transaksi</button></div>
+  </form>
+</div></div>
+
+<script>
+const KEY='finora_v1';
+const incomeCats=['Gaji','Bonus','Bisnis','Freelance','Investasi','Lainnya'];
+const expenseCats=['Rumah','Makan & Minum','Transportasi','Belanja','Cicilan','Tagihan','Hiburan','Investasi','Tabungan','Keluarga','Kesehatan','Lainnya'];
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ profile:'', transactions:[
+  {id:1,date:new Date().toISOString().slice(0,10),desc:'Contoh pemasukan',type:'income',cat:'Gaji',amount:10000000},
+  {id:2,date:new Date().toISOString().slice(0,10),desc:'Contoh makan',type:'expense',cat:'Makan & Minum',amount:75000}
+ ], budgets:{'Makan & Minum':1500000,'Transportasi':1000000,'Rumah':2500000,'Hiburan':500000}, goals:[{id:1,name:'Dana Darurat',target:10000000,saved:2500000}]
+};
+const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0);
+const save=()=>localStorage.setItem(KEY,JSON.stringify(data));
+const monthNow=()=>new Date().toISOString().slice(0,7);
+const monthName=m=>new Date(m+'-01').toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+function populateCats(){
+ let cats=[...new Set([...incomeCats,...expenseCats])];
+ txCat.innerHTML=cats.map(x=>`<option>${x}</option>`).join('');
+ filterCat.innerHTML='<option value="">Semua kategori</option>'+cats.map(x=>`<option>${x}</option>`).join('');
+}
+function openModal(){txDate.value=new Date().toISOString().slice(0,10);populateCats();modal.classList.add('show')}
+function closeModal(){modal.classList.remove('show');txForm.reset()}
+function saveTx(e){e.preventDefault();data.transactions.push({id:Date.now(),date:txDate.value,desc:txDesc.value.trim(),type:txType.value,cat:txCat.value,amount:Number(txAmount.value)});save();closeModal();renderAll()}
+function delTx(id){if(confirm('Hapus transaksi ini?')){data.transactions=data.transactions.filter(x=>x.id!==id);save();renderAll()}}
+function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
+function txRows(list){
+ if(!list.length)return '<div class="empty">Belum ada transaksi.</div>';
+ return `<table class="table"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Tipe</th><th class="amount">Nominal</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td>${fmtDate(x.date)}</td><td><b>${esc(x.desc)}</b></td><td><span class="tag">${esc(x.cat)}</span></td><td>${x.type==='income'?'<span class="positive">Pemasukan</span>':'<span class="negative">Pengeluaran</span>'}</td><td class="amount ${x.type==='income'?'positive':'negative'}">${x.type==='income'?'+':'-'} ${rupiah(x.amount)}</td><td class="row-actions"><button onclick="delTx(${x.id})">Hapus</button></td></tr>`).join('')}</tbody></table>`
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function renderDashboard(){
+ let inc=data.transactions.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0);
+ let out=data.transactions.filter(x=>x.type==='expense').reduce((a,x)=>a+x.amount,0);
+ let mi=data.transactions.filter(x=>x.date.slice(0,7)===monthNow());
+ let miIn=mi.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0),miOut=mi.filter(x=>x.type==='expense').reduce((a,x)=>a+x.amount,0);
+ mBalance.textContent=rupiah(inc-out);mIncome.textContent=rupiah(miIn);mExpense.textContent=rupiah(miOut);mRate.textContent=(miIn?Math.max(0,(miIn-miOut)/miIn*100):0).toFixed(0)+'%';
+ monthText.textContent=monthName(monthNow());
+ recent.innerHTML=txRows([...data.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7));
+ renderChart();renderBudgetMini();
+}
+function renderChart(){
+ let months=[];let d=new Date();for(let i=5;i>=0;i--){let x=new Date(d.getFullYear(),d.getMonth()-i,1);months.push(x.toISOString().slice(0,7))}
+ let vals=months.map(m=>({m,inc:data.transactions.filter(x=>x.date.slice(0,7)===m&&x.type==='income').reduce((a,x)=>a+x.amount,0),out:data.transactions.filter(x=>x.date.slice(0,7)===m&&x.type==='expense').reduce((a,x)=>a+x.amount,0)}));
+ let max=Math.max(1,...vals.flatMap(x=>[x.inc,x.out]));
+ chart.innerHTML=vals.map(x=>`<div style="flex:1"><div class="barwrap"><div class="bar inc" title="${rupiah(x.inc)}" style="height:${x.inc/max*92}%"></div><div class="bar out" title="${rupiah(x.out)}" style="height:${x.out/max*92}%"></div></div><div class="month-label">${new Date(x.m+'-01').toLocaleDateString('id-ID',{month:'short'})}</div></div>`).join('');
+}
+function renderBudgetMini(){
+ let m=monthNow(),outs={};data.transactions.filter(x=>x.type==='expense'&&x.date.slice(0,7)===m).forEach(x=>outs[x.cat]=(outs[x.cat]||0)+x.amount);
+ let cats=Object.keys(data.budgets);budgetSummary.textContent=cats.length+' kategori';
+ budgetMini.innerHTML=cats.length?cats.map(c=>{let b=data.budgets[c]||0,v=outs[c]||0,p=Math.min(100,b?v/b*100:0);return `<div style="margin:14px 0"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px"><b>${esc(c)}</b><span class="${v>b?'negative':''}">${rupiah(v)} / ${rupiah(b)}</span></div><div class="progress"><i style="width:${p}%"></i></div></div>`}).join(''):'<div class="empty">Belum ada budget.</div>';
+}
+function renderTransactions(){
+ let q=(search.value||'').toLowerCase(),t=filterType.value,c=filterCat.value;
+ let list=data.transactions.filter(x=>(!q||x.desc.toLowerCase().includes(q)||x.cat.toLowerCase().includes(q))&&(!t||x.type===t)&&(!c||x.cat===c)).sort((a,b)=>b.date.localeCompare(a.date));
+ transactionsTable.innerHTML=txRows(list);
+}
+function renderBudget(){
+ let m=monthNow(),outs={};data.transactions.filter(x=>x.type==='expense'&&x.date.slice(0,7)===m).forEach(x=>outs[x.cat]=(outs[x.cat]||0)+x.amount);
+ let cats=Object.keys(data.budgets);
+ budgetList.innerHTML=cats.length?cats.map(c=>{let b=data.budgets[c],v=outs[c]||0,p=Math.min(100,b?v/b*100:0);return `<div style="padding:18px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><div><b>${esc(c)}</b><div class="muted" style="font-size:12px;margin-top:5px">${rupiah(v)} terpakai dari ${rupiah(b)}</div></div><button class="btn" onclick="removeBudget('${esc(c)}')">Hapus</button></div><div class="progress" style="margin-top:12px"><i style="width:${p}%"></i></div></div>`}).join(''):'<div class="empty">Belum ada budget. Klik + Kategori.</div>';
+}
+function addBudget(){let c=prompt('Nama kategori budget:');if(!c)return;let n=Number(prompt('Budget bulanan (Rp):','1000000'));if(!n)return;data.budgets[c]=n;save();renderAll()}
+function removeBudget(c){delete data.budgets[c];save();renderAll()}
+function addGoal(){let name=prompt('Nama target:');if(!name)return;let target=Number(prompt('Target nominal (Rp):','10000000'));if(!target)return;data.goals.push({id:Date.now(),name,target,saved:0});save();renderAll()}
+function renderGoals(){goalsList.innerHTML=data.goals.length?data.goals.map(g=>{let p=Math.min(100,g.saved/g.target*100);return `<div style="padding:18px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><div><b>${esc(g.name)}</b><div class="muted" style="font-size:12px;margin-top:5px">${rupiah(g.saved)} dari ${rupiah(g.target)}</div></div><button class="btn" onclick="updateGoal(${g.id})">Update</button></div><div class="progress" style="margin-top:12px"><i style="width:${p}%"></i></div><div class="muted" style="font-size:11px;margin-top:6px">${p.toFixed(0)}% tercapai</div></div>`}).join(''):'<div class="empty">Belum ada target.</div>'}
+function updateGoal(id){let g=data.goals.find(x=>x.id===id);let v=Number(prompt('Saldo tabungan saat ini (Rp):',g.saved));if(!isNaN(v)){g.saved=v;save();renderAll()}}
+function renderReports(){
+ let ex=data.transactions.filter(x=>x.type==='expense'),inc=data.transactions.filter(x=>x.type==='income');
+ avgIncome.textContent=rupiah(inc.reduce((a,x)=>a+x.amount,0)/Math.max(1,new Set(inc.map(x=>x.date.slice(0,7))).size));
+ avgExpense.textContent=rupiah(ex.reduce((a,x)=>a+x.amount,0)/Math.max(1,new Set(ex.map(x=>x.date.slice(0,7))).size));
+ countTx.textContent=data.transactions.length;
+ let cats={};ex.forEach(x=>cats[x.cat]=(cats[x.cat]||0)+x.amount);let arr=Object.entries(cats).sort((a,b)=>b[1]-a[1]);topCategory.textContent=arr[0]?.[0]||'-';
+ categoryReport.innerHTML=arr.length?arr.map(([c,v])=>`<div style="margin:15px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><b>${esc(c)}</b><span>${rupiah(v)}</span></div><div class="progress" style="margin-top:7px"><i style="width:${Math.min(100,v/(arr[0][1]||1)*100)}%"></i></div></div>`).join(''):'<div class="empty">Belum ada data.</div>';
+ let total=ex.reduce((a,x)=>a+x.amount,0),largest=arr[0];insights.innerHTML=largest?`• Pengeluaran terbesar: <b>${esc(largest[0])}</b> (${rupiah(largest[1])}).<br>• Total pengeluaran tercatat: <b>${rupiah(total)}</b>.<br>• Coba tetapkan budget untuk kategori terbesar agar lebih mudah dikontrol.`:'Belum cukup data untuk membuat insight.';
+}
+function saveProfile(){data.profile=profileName.value;save();alert('Profil disimpan.')}
+function resetData(){if(confirm('Reset semua data?')){localStorage.removeItem(KEY);location.reload()}}
+function exportData(){let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='finora-backup.json';a.click();URL.revokeObjectURL(a.href)}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===id));pageTitle.textContent=document.querySelector(`.nav button[data-page="${id}"]`).innerText.replace(/^[^\\w]*/,'').trim();if(id==='transactions')renderTransactions();if(id==='budget')renderBudget();if(id==='goals')renderGoals();if(id==='reports')renderReports()}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+function renderAll(){populateCats();renderDashboard();renderTransactions();renderBudget();renderGoals();renderReports();profileName.value=data.profile||''}
+renderAll();
+</script>
+</body>
+</html>
